@@ -1,5 +1,6 @@
 import { GraphQLError } from "graphql";
 import {
+  countJobs,
   createJob,
   deleteJob,
   getJob,
@@ -11,7 +12,12 @@ import { getCompany } from "./db/companies.js";
 
 export const resolvers = {
   Query: {
-    jobs: () => getJobs(),
+    jobs: async (_root, { limit, offset }) => {
+      const items = await getJobs(limit, offset);
+      const totalCount = await countJobs();
+
+      return { items, totalCount };
+    },
     job: async (_root, { id }) => {
       const job = await getJob(id);
       if (!job) throw notFoundError("No job found with id " + id);
@@ -56,12 +62,9 @@ export const resolvers = {
   },
 
   Job: {
-    date: (job) => {
-      return toIsoDate(job.createdAt);
-    },
-    company: (job) => {
-      return getCompany(job.companyId);
-    },
+    company: (job, _args, { companyLoader }) =>
+      companyLoader.load(job.companyId),
+    date: (job) => toIsoDate(job.createdAt),
   },
 
   Company: {
