@@ -1,13 +1,25 @@
-import { useEffect, useState } from "react";
 import JobList from "../components/JobList";
-import { getJobs } from "../lib/graphql/queries";
+import { jobsQuery } from "../lib/graphql/queries";
+import { useQuery } from "@apollo/client";
+
+function useJobs() {
+  const { data, loading, error } = useQuery(jobsQuery, {
+    fetchPolicy: "network-only",
+  });
+
+  return {
+    jobs: data?.jobs,
+    loading,
+    error: Boolean(error),
+  };
+}
 
 function HomePage() {
-  const [jobs, setJobs] = useState([]);
+  const { jobs, loading, error } = useJobs();
 
-  useEffect(() => {
-    getJobs().then(setJobs);
-  }, []);
+  if (loading) return <p>Loading...</p>;
+
+  if (error) return <p>Error</p>;
 
   return (
     <div>
